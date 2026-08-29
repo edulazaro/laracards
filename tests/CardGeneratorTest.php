@@ -119,6 +119,49 @@ class CardGeneratorTest extends TestCase
         $this->assertStringNotContainsString('href=""', $svg);
     }
 
+    public function test_a_bottom_anchored_title_keeps_its_last_line_on_the_same_rule(): void
+    {
+        config()->set('laracards.templates.post.fit.title', [
+            'font' => 'default', 'x' => 88, 'max_width' => 900, 'max_lines' => 3,
+            'sizes' => [64], 'line_height' => 1.16, 'anchor' => 'bottom', 'baseline' => 450,
+        ]);
+
+        file_put_contents(
+            $this->workspace . '/templates/post.svg',
+            '<svg xmlns="http://www.w3.org/2000/svg"><text y="{{title_baseline}}">{{title_tspans}}</text></svg>'
+        );
+
+        $dy = (int) round(64 * 1.16);
+
+        $this->generator()->generate($this->card(['title' => 'Corto']));
+        $this->assertStringContainsString('y="450"', $this->renderer->lastSvg());
+
+        $this->generator()->generate($this->card(['title' => str_repeat('palabra ', 12)])->template('post'));
+        $this->assertStringContainsString('y="' . (450 - 2 * $dy) . '"', $this->renderer->lastSvg());
+    }
+
+    public function test_it_exposes_where_a_fitted_block_ends(): void
+    {
+        config()->set('laracards.templates.post.fit.title', [
+            'font' => 'default', 'x' => 80, 'max_width' => 900, 'max_lines' => 3,
+            'sizes' => [60], 'line_height' => 1.2, 'baseline' => 300,
+        ]);
+
+        file_put_contents(
+            $this->workspace . '/templates/post.svg',
+            '<svg xmlns="http://www.w3.org/2000/svg"><text y="{{title_baseline}}">{{title_tspans}}</text><text y="{{title_bottom}}">x</text></svg>'
+        );
+
+        $this->generator()->generate($this->card(['title' => 'Corto']));
+        $this->assertStringContainsString('y="300"', $this->renderer->lastSvg());
+
+        $this->generator()->generate($this->card(['title' => str_repeat('palabra ', 14)]));
+        $svg = $this->renderer->lastSvg();
+
+        $this->assertStringContainsString('y="300"', $svg);
+        $this->assertStringContainsString('y="' . (300 + 2 * (int) round(60 * 1.2)) . '"', $svg);
+    }
+
     public function test_an_unchanged_card_is_not_rendered_twice(): void
     {
         $generator = $this->generator();

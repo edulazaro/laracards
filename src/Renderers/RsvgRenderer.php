@@ -17,8 +17,11 @@ use Symfony\Component\Process\Process;
  */
 class RsvgRenderer implements Renderer
 {
-    public function __construct(private string $binary = 'rsvg-convert')
-    {
+    /** @param array<string,string> $env Extra environment for the process. */
+    public function __construct(
+        private string $binary = 'rsvg-convert',
+        private array $env = [],
+    ) {
     }
 
     public function render(string $svgPath, string $outputPath, int $width, int $height): void
@@ -30,7 +33,7 @@ class RsvgRenderer implements Renderer
             '--format', 'png',
             '--output', $outputPath,
             $svgPath,
-        ]);
+        ], null, $this->env);
 
         $process->setTimeout(60);
         $process->run();
