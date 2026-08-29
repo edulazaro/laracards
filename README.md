@@ -57,6 +57,24 @@ Card::make('why-agents-are-more-than-a-model')
 
 `title` is declared as a fit block in the config, so the generator turns it into `{{title_tspans}}` and `{{title_font_size}}` for the template.
 
+## Size and format
+
+Both are per template, with the values at the root of the config as the fallback. One project can serve a 1200x630 open graph card and a square social card from the same command.
+
+```php
+'width' => 1200, 'height' => 630, 'format' => 'png', 'quality' => 85,
+
+'templates' => [
+    'post'  => ['file' => 'post.svg'],
+    'photo' => ['file' => 'photo.svg', 'format' => 'jpg'],
+    'square'=> ['file' => 'square.svg', 'width' => 1080, 'height' => 1080],
+],
+```
+
+`png`, `jpg` and `webp` are supported. PNG keeps a flat card crisp and lossless; behind a photograph, `jpg` is a fraction of the size. The renderers only write PNG, so anything else is converted with GD afterwards, and a JPEG is flattened onto white because it has no alpha.
+
+The extension of an explicit `->output()` path wins over the configured format, because asking for a `.jpg` and getting a PNG named `.jpg` would be worse than any precedence rule. Size and format are part of the fingerprint, so changing either regenerates the cards that use them.
+
 ## Backgrounds
 
 Three drivers, one code path. All of them end as a local file embedded through `__BACKGROUND_URI__`.

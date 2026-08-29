@@ -10,6 +10,7 @@ Three bugs that only surfaced once the package was driving a real site.
 
 Added:
 
+- **Per-template size and format.** `width`, `height` and `format` can be set on a template, falling back to the values at the root of the config, so one project can serve a 1200x630 open graph card and a square social card from the same command. `png` (the default), `jpg` and `webp` are supported; the renderers only write PNG, so anything else is converted with GD. The extension of an explicit output path wins over the configured format, and both size and format are part of the fingerprint.
 - `anchor` and `baseline` on a fit rule, exposed to the template as `{key}_baseline`. Anchoring at the bottom keeps a one-line headline and a three-line one sitting on the same rule.
 - `{key}_bottom`, where a fitted block actually ends, so a template can hang the next element off a variable-height block instead of guessing a fixed position.
 - `env` on a renderer, passed through to the process. Pointing `FONTCONFIG_FILE` at your own config is how you render with the fonts your project ships without rebuilding the container image.

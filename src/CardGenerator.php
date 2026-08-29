@@ -5,6 +5,7 @@ namespace EduLazaro\Laracards;
 use EduLazaro\Laracards\Contracts\Renderer;
 use EduLazaro\Laracards\Support\DataUri;
 use EduLazaro\Laracards\Support\Manifest;
+use EduLazaro\Laracards\Support\Raster;
 use EduLazaro\Laracards\Support\Template;
 use EduLazaro\Laracards\Support\Text;
 use EduLazaro\Laracards\Support\TextFitter;
@@ -32,9 +33,17 @@ class CardGenerator
         $config = $this->templateConfig($card->templateName());
         $templatePath = rtrim((string) config('laracards.paths.templates'), '/') . '/' . $config['file'];
 
-        // The template is an input like any other: editing the SVG has to make
-        // every card drawn with it stale, or the change silently never lands.
-        $fingerprint = sha1($card->fingerprint() . '|' . (is_file($templatePath) ? hash_file('xxh128', $templatePath) : ''));
+        [$width, $height] = $this->size($config);
+        $format = $this->format($card, $config);
+
+        // The template and the output geometry are inputs like any other:
+        // editing the SVG, or asking for a different size or format, has to
+        // make every card drawn with it stale, or the change never lands.
+        $fingerprint = sha1(implode('|', [
+            $card->fingerprint(),
+            is_file($templatePath) ? hash_file('xxh128', $templatePath) : '',
+            $width, $height, $format,
+        ]));
 
         if (! $force && ! $this->manifest->isStale($card->key(), $fingerprint, $output)) {
             return null;
@@ -53,13 +62,12 @@ class CardGenerator
         $tempSvg = rtrim($tempDir, '/') . '/' . $card->key() . '.svg';
         file_put_contents($tempSvg, $svg);
 
+        // The renderers only write PNG, so anything else is converted after.
+        $tempPng = $format === 'png' ? $output : $tempDir . '/' . $card->key() . '.png';
+
         try {
-            $this->renderer->render(
-                $tempSvg,
-                $output,
-                (int) config('laracards.width', 1200),
-                (int) config('laracards.height', 630),
-            );
+            $this->renderer->render($tempSvg, $tempPng, $width, $height);
+            Raster::write($tempPng, $output, $format, (int) config('laracards.quality', 85));
         } finally {
             @unlink($tempSvg);
         }
@@ -67,6 +75,35 @@ class CardGenerator
         $this->manifest->put($card->key(), $fingerprint);
 
         return $output;
+    }
+
+    /**
+     * Output size, per template with the global values as the fallback.
+     *
+     * @param  array<string,mixed>  $config
+     * @return array{0:int,1:int}
+     */
+    private function size(array $config): array
+    {
+        return [
+            (int) ($config['width'] ?? config('laracards.width', 1200)),
+            (int) ($config['height'] ?? config('laracards.height', 630)),
+        ];
+    }
+
+    /**
+     * Output format. The extension of an explicit output path wins, because
+     * asking for a .jpg and getting a PNG named .jpg would be worse than any
+     * configuration precedence rule.
+     *
+     * @param  array<string,mixed>  $config
+     */
+    private function format(Card $card, array $config): string
+    {
+        return Raster::normalise(pathinfo($card->outputPath(), PATHINFO_EXTENSION))
+            ?? Raster::normalise($config['format'] ?? null)
+            ?? Raster::normalise(config('laracards.format'))
+            ?? 'png';
     }
 
     public function manifest(): Manifest

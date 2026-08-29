@@ -41,8 +41,17 @@ return [
     |--------------------------------------------------------------------------
     */
 
+    // Defaults for every template. A template can override any of the three,
+    // which is how one project serves a 1200x630 open graph card and a square
+    // social card from the same command.
     'width' => 1200,
     'height' => 630,
+
+    // png, jpg or webp. PNG keeps flat cards crisp and lossless; jpg is a
+    // fraction of the size once a photograph is behind the text. The renderers
+    // only write PNG, so anything else is converted with GD afterwards.
+    'format' => 'png',
+    'quality' => 85,
 
     'paths' => [
         'templates' => resource_path('cards'),
@@ -100,6 +109,9 @@ return [
 
         'post' => [
             'file' => 'post.svg',
+            // 'width' => 1200,
+            // 'height' => 630,
+            // 'format' => 'jpg',
             'fit' => [
                 'title' => [
                     'font' => 'default',

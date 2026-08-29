@@ -6,6 +6,7 @@ use EduLazaro\Laracards\Backgrounds\LocalBackground;
 use EduLazaro\Laracards\Backgrounds\NullBackground;
 use EduLazaro\Laracards\Backgrounds\UnsplashBackground;
 use EduLazaro\Laracards\Contracts\Background;
+use EduLazaro\Laracards\Support\Raster;
 
 /**
  * A card waiting to be generated.
@@ -105,7 +106,17 @@ class Card
 
     public function outputPath(): string
     {
-        return $this->output ??= rtrim((string) config('laracards.paths.output'), '/') . '/' . $this->key . '.png';
+        if ($this->output !== null) {
+            return $this->output;
+        }
+
+        // The extension follows the template's format, so a template that
+        // produces JPEG does not end up writing files named .png.
+        $format = Raster::normalise(config("laracards.templates.{$this->template}.format"))
+            ?? Raster::normalise(config('laracards.format'))
+            ?? 'png';
+
+        return $this->output = rtrim((string) config('laracards.paths.output'), '/') . '/' . $this->key . '.' . $format;
     }
 
     /**
