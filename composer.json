@@ -1,0 +1,49 @@
+{
+    "name": "edulazaro/laracards",
+    "description": "Editorial social cards and blog covers for Laravel. SVG templates rendered with rsvg-convert or resvg, real font metrics for text fitting, and pluggable backgrounds (solid, Unsplash or AI-generated images).",
+    "keywords": ["laravel", "og", "open-graph", "social-cards", "svg", "blog", "images"],
+    "license": "MIT",
+    "type": "library",
+    "require": {
+        "php": ">=8.2",
+        "ext-gd": "*",
+        "ext-fileinfo": "*",
+        "illuminate/support": ">=11.0",
+        "illuminate/console": ">=11.0",
+        "illuminate/filesystem": ">=11.0",
+        "symfony/process": "^6.4|^7.0"
+    },
+    "suggest": {
+        "guzzlehttp/guzzle": "Required only by the Unsplash background driver, to download and cache photos.",
+        "ext-imagick": "Alternative to shelling out, if you ever add an Imagick renderer."
+    },
+    "autoload": {
+        "psr-4": {
+            "EduLazaro\\Laracards\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "EduLazaro\\Laracards\\Tests\\": "tests/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Edu Lazaro",
+            "email": "edu@edulazaro.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "EduLazaro\\Laracards\\LaracardsServiceProvider"
+            ]
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0",
+        "orchestra/testbench": "^9.0"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
