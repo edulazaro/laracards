@@ -18,15 +18,17 @@
 
   <!-- Background layer. Solid, Unsplash photo or an image generated elsewhere:
        all three arrive here as the same data URI, so the template never changes. -->
+  {{#background_uri}}
   <g clip-path="url(#frame)">
     <image x="0" y="0" width="1200" height="630"
            preserveAspectRatio="xMidYMid slice"
            href="__BACKGROUND_URI__" xlink:href="__BACKGROUND_URI__"/>
   </g>
+  {{/background_uri}}
 
   <rect width="1200" height="630" fill="url(#scrim)"/>
 
-  <image x="80" y="72" width="220" height="58" href="__LOGO_URI__" xlink:href="__LOGO_URI__"/>
+  {{#logo_uri}}<image x="80" y="72" width="220" height="58" href="__LOGO_URI__" xlink:href="__LOGO_URI__"/>{{/logo_uri}}
 
   <text x="80" y="245" font-family="-apple-system, Helvetica, Arial, sans-serif"
         font-weight="600" font-size="20" letter-spacing="3" fill="#eab308">{{category_label}}</text>

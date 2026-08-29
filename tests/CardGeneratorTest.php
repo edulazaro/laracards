@@ -91,6 +91,34 @@ class CardGeneratorTest extends TestCase
         $this->assertStringNotContainsString('base64', $svg);
     }
 
+    /**
+     * Regression: an <image> with an empty href makes librsvg abort with
+     * signal 6, which only showed up in CI because no renderer was installed
+     * locally. No source means no element at all.
+     */
+    public function test_no_image_element_is_emitted_without_a_source(): void
+    {
+        $this->generator()->generate($this->card());
+
+        $svg = $this->renderer->lastSvg();
+
+        $this->assertStringNotContainsString('href=""', $svg);
+        $this->assertStringNotContainsString('<image', $svg);
+    }
+
+    public function test_the_background_layer_appears_only_when_there_is_one(): void
+    {
+        $photo = $this->workspace . '/photo.png';
+        imagepng(imagecreatetruecolor(8, 8), $photo);
+
+        $this->generator()->generate($this->card()->background($photo));
+
+        $svg = $this->renderer->lastSvg();
+
+        $this->assertStringContainsString('<image', $svg);
+        $this->assertStringNotContainsString('href=""', $svg);
+    }
+
     public function test_an_unchanged_card_is_not_rendered_twice(): void
     {
         $generator = $this->generator();

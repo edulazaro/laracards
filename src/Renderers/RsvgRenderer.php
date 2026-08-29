@@ -35,7 +35,24 @@ class RsvgRenderer implements Renderer
         $process->setTimeout(60);
         $process->run();
 
+        // A crashed renderer is signaled, not merely unsuccessful, and asking
+        // Symfony for the exit code of a signaled process throws. Convert it
+        // here so callers only ever have to handle RenderFailed.
+        if ($process->hasBeenSignaled()) {
+            @unlink($outputPath);
+
+            throw new RenderFailed(sprintf(
+                '%s crashed on %s (signal %d). %s',
+                $this->binary,
+                basename($svgPath),
+                $process->getTermSignal(),
+                trim($process->getErrorOutput()) ?: 'No error output.'
+            ));
+        }
+
         if (! $process->isSuccessful() || ! is_file($outputPath)) {
+            @unlink($outputPath);
+
             throw new RenderFailed(sprintf(
                 'rsvg-convert failed for %s: %s',
                 basename($svgPath),

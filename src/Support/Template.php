@@ -4,7 +4,7 @@ namespace EduLazaro\Laracards\Support;
 
 use RuntimeException;
 
-/** An SVG template plus its placeholder substitution. */
+/** An SVG template plus its placeholder and section substitution. */
 class Template
 {
     public function __construct(private string $path)
@@ -15,17 +15,27 @@ class Template
     }
 
     /**
-     * Replaces both {{key}} and __KEY__ placeholders.
+     * Resolves sections, then placeholders.
      *
-     * The __KEY__ form exists because data URIs are not XML-escapable content
-     * and read badly inside curly braces; it is what the logo and background
-     * layers use.
+     * Placeholders come in two forms: {{key}} for text, and __KEY__ for values
+     * that are not XML-escapable content, such as data URIs.
+     *
+     * Sections are `{{#key}}...{{/key}}` and are dropped when the key has no
+     * value. They exist because an optional layer has to disappear entirely
+     * rather than render empty: an `<image>` with `href=""` makes librsvg
+     * abort, so "no background" cannot mean "background with no source".
      *
      * @param  array<string,string|int|float|null>  $data
      */
     public function render(array $data): string
     {
         $svg = (string) file_get_contents($this->path);
+
+        $svg = preg_replace_callback(
+            '/\{\{#([a-z0-9_]+)\}\}(.*?)\{\{\/\1\}\}/s',
+            fn (array $m) => trim((string) ($data[$m[1]] ?? '')) === '' ? '' : $m[2],
+            $svg
+        ) ?? $svg;
 
         foreach ($data as $key => $value) {
             $svg = str_replace(
@@ -36,6 +46,6 @@ class Template
         }
 
         // Any placeholder left unfilled would render as literal text.
-        return preg_replace('/\{\{[a-z0-9_]+\}\}|__[A-Z0-9_]+__/', '', $svg) ?? $svg;
+        return preg_replace('/\{\{[#\/]?[a-z0-9_]+\}\}|__[A-Z0-9_]+__/', '', $svg) ?? $svg;
     }
 }

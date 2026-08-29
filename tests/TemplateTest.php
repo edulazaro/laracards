@@ -44,6 +44,31 @@ class TemplateTest extends BaseTestCase
         $this->assertStringNotContainsString('__', $svg);
     }
 
+    public function test_a_section_is_kept_when_its_key_has_a_value(): void
+    {
+        $svg = $this->template('{{#logo_uri}}<image href="__LOGO_URI__"/>{{/logo_uri}}')
+            ->render(['logo_uri' => 'data:image/png;base64,AAA']);
+
+        $this->assertSame('<image href="data:image/png;base64,AAA"/>', $svg);
+    }
+
+    public function test_a_section_is_dropped_when_its_key_is_empty_or_missing(): void
+    {
+        $template = '<a/>{{#logo_uri}}<image href="__LOGO_URI__"/>{{/logo_uri}}<b/>';
+
+        $this->assertSame('<a/><b/>', $this->template($template)->render(['logo_uri' => '']));
+        $this->assertSame('<a/><b/>', $this->template($template)->render([]));
+    }
+
+    public function test_a_multiline_section_is_dropped_whole(): void
+    {
+        $svg = $this->template("<a/>{{#bg}}\n  <g>\n    <image href=\"__BG__\"/>\n  </g>\n{{/bg}}<b/>")
+            ->render(['bg' => '']);
+
+        $this->assertStringNotContainsString('<image', $svg);
+        $this->assertStringNotContainsString('<g>', $svg);
+    }
+
     public function test_it_fails_loudly_when_the_template_is_absent(): void
     {
         $this->expectExceptionMessageMatches('/template not found/');
