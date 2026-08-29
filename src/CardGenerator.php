@@ -29,19 +29,21 @@ class CardGenerator
     public function generate(Card $card, bool $force = false): ?string
     {
         $output = $card->outputPath();
-        $fingerprint = $card->fingerprint();
+        $config = $this->templateConfig($card->templateName());
+        $templatePath = rtrim((string) config('laracards.paths.templates'), '/') . '/' . $config['file'];
+
+        // The template is an input like any other: editing the SVG has to make
+        // every card drawn with it stale, or the change silently never lands.
+        $fingerprint = sha1($card->fingerprint() . '|' . (is_file($templatePath) ? hash_file('xxh128', $templatePath) : ''));
 
         if (! $force && ! $this->manifest->isStale($card->key(), $fingerprint, $output)) {
             return null;
         }
 
-        $config = $this->templateConfig($card->templateName());
-
         $data = $this->escape($card->payload());
         $data += $this->fitBlocks($config, $card->payload());
         $data['background_uri'] = DataUri::fromFile($card->backgroundDriver()->resolve()) ?? '';
 
-        $templatePath = rtrim((string) config('laracards.paths.templates'), '/') . '/' . $config['file'];
         $svg = (new Template($templatePath))->render($data);
 
         $this->ensureDirectory(dirname($output));
