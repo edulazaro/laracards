@@ -19,6 +19,13 @@ return [
     'renderers' => [
         'rsvg' => [
             'binary' => env('LARACARDS_RSVG_BINARY', 'rsvg-convert'),
+
+            // Extra environment for the process. librsvg resolves fonts through
+            // fontconfig, so a brand face that is not installed system-wide
+            // falls back silently. Pointing FONTCONFIG_FILE at a config of your
+            // own is how you use the fonts your project already ships without
+            // rebuilding the container image.
+            // 'env' => ['FONTCONFIG_FILE' => resource_path('cards/fonts.conf')],
         ],
         'resvg' => [
             'binary' => env('LARACARDS_RESVG_BINARY', 'resvg'),
@@ -34,8 +41,17 @@ return [
     |--------------------------------------------------------------------------
     */
 
+    // Defaults for every template. A template can override any of the three,
+    // which is how one project serves a 1200x630 open graph card and a square
+    // social card from the same command.
     'width' => 1200,
     'height' => 630,
+
+    // png, jpg or webp. PNG keeps flat cards crisp and lossless; jpg is a
+    // fraction of the size once a photograph is behind the text. The renderers
+    // only write PNG, so anything else is converted with GD afterwards.
+    'format' => 'png',
+    'quality' => 85,
 
     'paths' => [
         'templates' => resource_path('cards'),
@@ -93,6 +109,9 @@ return [
 
         'post' => [
             'file' => 'post.svg',
+            // 'width' => 1200,
+            // 'height' => 630,
+            // 'format' => 'jpg',
             'fit' => [
                 'title' => [
                     'font' => 'default',
@@ -101,6 +120,14 @@ return [
                     'max_lines' => 3,
                     'sizes' => [82, 72, 64, 56, 48],
                     'line_height' => 1.17,
+
+                    // Where the block sits. With 'anchor' => 'bottom' the LAST
+                    // line lands on 'baseline', so a one-line headline and a
+                    // three-line one stay visually balanced; the default 'top'
+                    // puts the FIRST line there. Either way the template reads
+                    // the computed value from {{title_baseline}}.
+                    'anchor' => 'top',
+                    'baseline' => 320,
                 ],
             ],
         ],

@@ -18,7 +18,12 @@ class FakeRenderer implements Renderer
             'height' => $height,
         ];
 
-        file_put_contents($outputPath, 'fake-png');
+        // A real PNG of the requested size: anything downstream that converts
+        // the render has to be exercised for real, not handed a placeholder.
+        $image = imagecreatetruecolor($width, $height);
+        imagefill($image, 0, 0, imagecolorallocate($image, 10, 10, 10));
+        imagepng($image, $outputPath);
+        imagedestroy($image);
     }
 
     public function available(): bool

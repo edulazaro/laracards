@@ -57,6 +57,24 @@ Card::make('why-agents-are-more-than-a-model')
 
 `title` is declared as a fit block in the config, so the generator turns it into `{{title_tspans}}` and `{{title_font_size}}` for the template.
 
+## Size and format
+
+Both are per template, with the values at the root of the config as the fallback. One project can serve a 1200x630 open graph card and a square social card from the same command.
+
+```php
+'width' => 1200, 'height' => 630, 'format' => 'png', 'quality' => 85,
+
+'templates' => [
+    'post'  => ['file' => 'post.svg'],
+    'photo' => ['file' => 'photo.svg', 'format' => 'jpg'],
+    'square'=> ['file' => 'square.svg', 'width' => 1080, 'height' => 1080],
+],
+```
+
+`png`, `jpg` and `webp` are supported. PNG keeps a flat card crisp and lossless; behind a photograph, `jpg` is a fraction of the size. The renderers only write PNG, so anything else is converted with GD afterwards, and a JPEG is flattened onto white because it has no alpha.
+
+The extension of an explicit `->output()` path wins over the configured format, because asking for a `.jpg` and getting a PNG named `.jpg` would be worse than any precedence rule. Size and format are part of the fingerprint, so changing either regenerates the cards that use them.
+
 ## Backgrounds
 
 Three drivers, one code path. All of them end as a local file embedded through `__BACKGROUND_URI__`.
@@ -108,6 +126,39 @@ php artisan cards:generate --source=post --only=some-slug --force
 php artisan cards:generate --dry-run
 ```
 
+## Placing a block whose height you do not know
+
+A headline can take one line or three, and SVG cannot do arithmetic, so the position has to be computed before the template sees it. Two things come out of every fit rule.
+
+`anchor` decides which line lands on `baseline`. The default, `top`, puts the first line there. With `bottom`, the last line does, which keeps a short headline and a long one sitting on the same rule instead of drifting down the card.
+
+```php
+'title' => [
+    'font' => 'default', 'x' => 80, 'max_width' => 1040,
+    'max_lines' => 3, 'sizes' => [82, 72, 64, 56, 48], 'line_height' => 1.17,
+    'anchor' => 'bottom', 'baseline' => 434,
+],
+```
+
+The template reads the result from `{{title_baseline}}`, and everything that has to travel with the headline goes in a group translated to it:
+
+```xml
+<g transform="translate(0 {{title_baseline}})">
+  <text x="80" y="-78" font-size="19" fill="#eab308">{{category_label}}</text>
+  <text x="80" y="0" font-size="{{title_font_size}}">{{title_tspans}}</text>
+</g>
+```
+
+Every block also exposes `{key}_bottom`, which is where it actually ends. That is how a subtitle hangs off a headline of unknown height and keeps the same gap in every card:
+
+```xml
+<g transform="translate(0 {{title_bottom}})">
+  <text x="80" y="52" font-size="{{subtitle_font_size}}">{{subtitle_tspans}}</text>
+</g>
+```
+
+Alongside those, a fit rule also fills `{key}_tspans`, `{key}_font_size` and `{key}_line_count`.
+
 ## Text fitting is measured, not estimated
 
 Wrapping by character count gives every glyph the same budget, so a title made of wide words silently runs off the card. Laracards measures with GD against the same font file, picks the largest size from the candidate list that fits in the given number of lines, and only ellipsizes when even the smallest one does not.
@@ -140,6 +191,27 @@ Two ways out. Install the face in the container, or switch to the resvg renderer
     ],
 ],
 ```
+
+A third way avoids touching the image at all: `rsvg-convert` reads fontconfig, and the renderer passes through whatever environment you give it.
+
+```php
+'rsvg' => [
+    'binary' => 'rsvg-convert',
+    'env' => ['FONTCONFIG_FILE' => resource_path('cards/fonts.conf')],
+],
+```
+
+That file has to list the system font directories too, because it replaces the system configuration rather than adding to it:
+
+```xml
+<fontconfig>
+  <dir prefix="relative">../../public/fonts</dir>
+  <dir>/usr/share/fonts</dir>
+  <cachedir prefix="relative">../../storage/app/laracards/fccache</cachedir>
+</fontconfig>
+```
+
+`prefix="relative"` resolves against the config file, so the same file works on your laptop and inside a container without knowing the mount path.
 
 Either way, keep `laracards.fonts` pointing at the same faces the templates declare, or the measurement drifts from the render.
 
