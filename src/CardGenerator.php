@@ -113,6 +113,23 @@ class CardGenerator
             $out[$field . '_tspans'] = implode("\n      ", $tspans);
             $out[$field . '_font_size'] = (string) $result['size'];
             $out[$field . '_line_count'] = (string) count($result['lines']);
+
+            // SVG cannot do arithmetic, so the baseline of the first line is
+            // computed here. Anchoring at the bottom keeps a one-line title and
+            // a three-line one sitting on the same rule, which is the only way
+            // a variable-length headline stays visually stable on the card.
+            if (isset($rules['baseline'])) {
+                $anchor = (string) ($rules['anchor'] ?? 'top');
+                $lastOffset = (count($result['lines']) - 1) * $dy;
+                $first = (int) $rules['baseline'] - ($anchor === 'bottom' ? $lastOffset : 0);
+
+                $out[$field . '_baseline'] = (string) $first;
+
+                // Where the block ends. Lets a template hang the next element
+                // off the real bottom of a variable-height block, instead of
+                // guessing a fixed position that only looks right sometimes.
+                $out[$field . '_bottom'] = (string) ($first + $lastOffset);
+            }
         }
 
         return $out;

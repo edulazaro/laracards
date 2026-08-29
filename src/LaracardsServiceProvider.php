@@ -21,10 +21,14 @@ class LaracardsServiceProvider extends ServiceProvider
             $options = (array) config("laracards.renderers.{$driver}", []);
 
             return match ($driver) {
-                'rsvg' => new RsvgRenderer((string) ($options['binary'] ?? 'rsvg-convert')),
+                'rsvg' => new RsvgRenderer(
+                    (string) ($options['binary'] ?? 'rsvg-convert'),
+                    (array) ($options['env'] ?? []),
+                ),
                 'resvg' => new ResvgRenderer(
                     (string) ($options['binary'] ?? 'resvg'),
                     (array) ($options['font_files'] ?? []),
+                    (array) ($options['env'] ?? []),
                 ),
                 default => throw new InvalidArgumentException("Laracards: unknown renderer [{$driver}]."),
             };

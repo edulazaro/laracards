@@ -17,10 +17,14 @@ use Symfony\Component\Process\Process;
  */
 class ResvgRenderer implements Renderer
 {
-    /** @param string[] $fontFiles */
+    /**
+     * @param  string[]  $fontFiles
+     * @param  array<string,string>  $env  Extra environment for the process.
+     */
     public function __construct(
         private string $binary = 'resvg',
         private array $fontFiles = [],
+        private array $env = [],
     ) {
     }
 
@@ -42,7 +46,7 @@ class ResvgRenderer implements Renderer
         $command[] = $svgPath;
         $command[] = $outputPath;
 
-        $process = new Process($command);
+        $process = new Process($command, null, $this->env);
         $process->setTimeout(60);
         $process->run();
 
