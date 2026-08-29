@@ -108,6 +108,39 @@ php artisan cards:generate --source=post --only=some-slug --force
 php artisan cards:generate --dry-run
 ```
 
+## Placing a block whose height you do not know
+
+A headline can take one line or three, and SVG cannot do arithmetic, so the position has to be computed before the template sees it. Two things come out of every fit rule.
+
+`anchor` decides which line lands on `baseline`. The default, `top`, puts the first line there. With `bottom`, the last line does, which keeps a short headline and a long one sitting on the same rule instead of drifting down the card.
+
+```php
+'title' => [
+    'font' => 'default', 'x' => 80, 'max_width' => 1040,
+    'max_lines' => 3, 'sizes' => [82, 72, 64, 56, 48], 'line_height' => 1.17,
+    'anchor' => 'bottom', 'baseline' => 434,
+],
+```
+
+The template reads the result from `{{title_baseline}}`, and everything that has to travel with the headline goes in a group translated to it:
+
+```xml
+<g transform="translate(0 {{title_baseline}})">
+  <text x="80" y="-78" font-size="19" fill="#eab308">{{category_label}}</text>
+  <text x="80" y="0" font-size="{{title_font_size}}">{{title_tspans}}</text>
+</g>
+```
+
+Every block also exposes `{key}_bottom`, which is where it actually ends. That is how a subtitle hangs off a headline of unknown height and keeps the same gap in every card:
+
+```xml
+<g transform="translate(0 {{title_bottom}})">
+  <text x="80" y="52" font-size="{{subtitle_font_size}}">{{subtitle_tspans}}</text>
+</g>
+```
+
+Alongside those, a fit rule also fills `{key}_tspans`, `{key}_font_size` and `{key}_line_count`.
+
 ## Text fitting is measured, not estimated
 
 Wrapping by character count gives every glyph the same budget, so a title made of wide words silently runs off the card. Laracards measures with GD against the same font file, picks the largest size from the candidate list that fits in the given number of lines, and only ellipsizes when even the smallest one does not.
@@ -140,6 +173,27 @@ Two ways out. Install the face in the container, or switch to the resvg renderer
     ],
 ],
 ```
+
+A third way avoids touching the image at all: `rsvg-convert` reads fontconfig, and the renderer passes through whatever environment you give it.
+
+```php
+'rsvg' => [
+    'binary' => 'rsvg-convert',
+    'env' => ['FONTCONFIG_FILE' => resource_path('cards/fonts.conf')],
+],
+```
+
+That file has to list the system font directories too, because it replaces the system configuration rather than adding to it:
+
+```xml
+<fontconfig>
+  <dir prefix="relative">../../public/fonts</dir>
+  <dir>/usr/share/fonts</dir>
+  <cachedir prefix="relative">../../storage/app/laracards/fccache</cachedir>
+</fontconfig>
+```
+
+`prefix="relative"` resolves against the config file, so the same file works on your laptop and inside a container without knowing the mount path.
 
 Either way, keep `laracards.fonts` pointing at the same faces the templates declare, or the measurement drifts from the render.
 
