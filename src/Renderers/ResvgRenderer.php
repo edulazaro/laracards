@@ -78,6 +78,13 @@ class ResvgRenderer implements Renderer
 
     public function available(): bool
     {
+        // ExecutableFinder only searches PATH by name, so a configured absolute
+        // path (which is how the binary is usually pinned in production) comes
+        // back as null even when the file is perfectly executable.
+        if (str_contains($this->binary, DIRECTORY_SEPARATOR)) {
+            return is_file($this->binary) && is_executable($this->binary);
+        }
+
         return (new ExecutableFinder)->find($this->binary) !== null;
     }
 }

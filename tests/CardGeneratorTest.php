@@ -162,6 +162,22 @@ class CardGeneratorTest extends TestCase
         $this->assertStringContainsString('y="' . (300 + 2 * (int) round(60 * 1.2)) . '"', $svg);
     }
 
+    public function test_editing_the_template_makes_every_card_stale(): void
+    {
+        $generator = $this->generator();
+        $template = $this->workspace . '/templates/post.svg';
+
+        $generator->generate($this->card());
+        $this->assertNull($generator->generate($this->card()));
+
+        file_put_contents($template, str_replace('#eab308', '#ff0000', file_get_contents($template)));
+
+        $this->assertNotNull(
+            $generator->generate($this->card()),
+            'A card must regenerate when the template it is drawn with changes.'
+        );
+    }
+
     public function test_an_unchanged_card_is_not_rendered_twice(): void
     {
         $generator = $this->generator();
