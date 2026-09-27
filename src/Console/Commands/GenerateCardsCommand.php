@@ -23,14 +23,23 @@ class GenerateCardsCommand extends Command
                             {--force : Regenerate even when nothing changed}
                             {--dry-run : List what would be generated, write nothing}';
 
-    protected $description = 'Generate social cards and blog covers from SVG templates';
+    protected $description = 'Generate social cards and blog covers from SVG or image templates';
 
     public function handle(CardGenerator $generator, Renderer $renderer): int
     {
         if (! $renderer->available()) {
-            $this->error('The configured renderer binary was not found. Install librsvg2-bin (rsvg-convert) or resvg.');
+            // Image templates are drawn with GD and need no binary, so a
+            // missing renderer only stops the run when an SVG template needs it.
+            $svgTemplates = array_filter(
+                array_keys((array) config('laracards.templates', [])),
+                fn ($template) => ! $generator->usesImage((string) $template),
+            );
 
-            return self::FAILURE;
+            if ($svgTemplates !== []) {
+                $this->error('The configured renderer binary was not found. Install librsvg2-bin (rsvg-convert) or resvg, or use image templates.');
+
+                return self::FAILURE;
+            }
         }
 
         $sources = $this->resolveSources();

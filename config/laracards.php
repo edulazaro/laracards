@@ -103,6 +103,10 @@ return [
     | one long string into wrapped <tspan> lines plus a font size that fits,
     | exposed as {{key_tspans}} and {{key_font_size}}.
     |
+    | A template can also be a PNG, JPG or WebP. Then the text is drawn onto
+    | the image with GD, no binary needed, and each fit block also takes
+    | 'color' and 'align', plus a 'baseline' or a place in a 'stack'.
+    |
     */
 
     'templates' => [
@@ -131,6 +135,20 @@ return [
                 ],
             ],
         ],
+
+        // An image template: the design is the image, the text is drawn on it.
+        // 'og' => [
+        //     'file' => 'og.png',
+        //     'stack' => ['fields' => ['title', 'subtitle'], 'center_y' => 315, 'gap' => 34],
+        //     'fit' => [
+        //         'title' => ['font' => 'default', 'x' => 600, 'max_width' => 900, 'max_lines' => 3,
+        //                     'sizes' => [56, 48, 44], 'line_height' => 1.2,
+        //                     'color' => 'rgba(255,255,255,0.9)', 'align' => 'center'],
+        //         'subtitle' => ['font' => 'default', 'x' => 600, 'max_width' => 1000, 'max_lines' => 1,
+        //                        'sizes' => [26], 'line_height' => 1.0,
+        //                        'color' => 'rgba(255,255,255,0.45)', 'align' => 'center'],
+        //     ],
+        // ],
 
     ],
 

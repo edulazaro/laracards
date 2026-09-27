@@ -32,6 +32,37 @@ class TextFitter
         }
     }
 
+    public function fontPath(): string
+    {
+        return $this->fontPath;
+    }
+
+    /** GD point size for a size given in pixels, the unit every template uses. */
+    public static function points(int $size): float
+    {
+        return $size * self::POINTS_PER_PIXEL;
+    }
+
+    /**
+     * Ascent and descent of the face at $size, in pixels.
+     *
+     * Needed to place a line without an SVG to do it: GD draws on a baseline,
+     * but a layout is described in boxes, so centring a block means knowing
+     * how far above and below the baseline the glyphs actually reach.
+     *
+     * @return array{ascent:int,descent:int}
+     */
+    public function metrics(int $size): array
+    {
+        $box = imagettfbbox(self::points($size), 0, $this->fontPath, 'Hg');
+
+        if ($box === false) {
+            throw new RuntimeException('Laracards: imagettfbbox failed. Is GD compiled with FreeType support?');
+        }
+
+        return ['ascent' => (int) abs($box[7]), 'descent' => (int) abs($box[1])];
+    }
+
     /**
      * @param  int[]  $sizes  Candidate font sizes, largest first.
      * @return array{lines:string[],size:int}
@@ -123,7 +154,7 @@ class TextFitter
             return 0;
         }
 
-        $box = imagettfbbox($size * self::POINTS_PER_PIXEL, 0, $this->fontPath, $text);
+        $box = imagettfbbox(self::points($size), 0, $this->fontPath, $text);
 
         if ($box === false) {
             throw new RuntimeException('Laracards: imagettfbbox failed. Is GD compiled with FreeType support?');

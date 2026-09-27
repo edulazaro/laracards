@@ -10,7 +10,7 @@
     <a href="https://github.com/edulazaro/laracards/blob/main/LICENSE.md"><img src="https://img.shields.io/packagist/l/edulazaro/laracards" alt="License"></a>
 </p>
 
-Editorial social cards and blog covers for Laravel. SVG templates rendered with `rsvg-convert` or `resvg`, text fitted with real font metrics, and backgrounds that can be a flat colour, an Unsplash photo or an image you generated somewhere else.
+Editorial social cards and blog covers for Laravel. SVG templates rendered with `rsvg-convert` or `resvg`, or image templates drawn with GD and no binary at all, text fitted with real font metrics, and backgrounds that can be a flat colour, an Unsplash photo or an image you generated somewhere else.
 
 ```bash
 composer require edulazaro/laracards
@@ -158,6 +158,38 @@ Every block also exposes `{key}_bottom`, which is where it actually ends. That i
 ```
 
 Alongside those, a fit rule also fills `{key}_tspans`, `{key}_font_size` and `{key}_line_count`.
+
+## Image templates, no SVG and no binary
+
+A template can also be a PNG, JPG or WebP. Laracards sees the extension and draws the text straight onto the image with GD, the same extension it already uses to measure text, so no renderer binary is needed and no other PHP library is pulled in. It is the way to keep an existing design that lives in an image, or to generate cards on a server where `librsvg` cannot be installed.
+
+An image carries no positions, so the fit rules say where each block goes and how it looks. They are the same rules an SVG template uses, plus the two things an SVG would otherwise hold itself: `color` (`#rgb`, `#rrggbb`, `#rrggbbaa`, `rgb()` or `rgba()`, white by default) and `align` (`left`, `center` or `right`, left by default). With `center`, `x` is the centre of each line; with `right`, its right edge.
+
+```php
+'og' => [
+    'file' => 'og.png',
+    'fit' => [
+        'title' => [
+            'font' => 'bold', 'x' => 600, 'max_width' => 480, 'max_lines' => 3,
+            'sizes' => [44], 'line_height' => 1.2,
+            'color' => 'rgba(255,255,255,0.9)', 'align' => 'center',
+            'baseline' => 300,
+        ],
+    ],
+],
+```
+
+Every block needs a place: a `baseline`, as above, or a spot in a `stack`. A stack measures a group of blocks and centres the whole group on `center_y`, each block below the previous one with `gap` between them. A block that comes out empty drops out, so a card without a subtitle keeps its title centred:
+
+```php
+'stack' => ['fields' => ['title', 'subtitle'], 'center_y' => 315, 'gap' => 34],
+```
+
+`stack` works for SVG templates too: it fills `{key}_baseline` and `{key}_bottom` for the stacked blocks.
+
+The card background, if the card has one, is drawn under the image, so a template with transparent areas works as an overlay on a photo, just as `__BACKGROUND_URI__` does in an SVG. Size, format, the manifest and the command behave exactly as with SVG templates. For image templates the template config is part of the fingerprint, since that is where colours and positions live: changing a colour regenerates the cards drawn with it.
+
+When every configured template is an image, `cards:generate` runs without a renderer binary. An SVG template on a machine without one fails with a clear error.
 
 ## Text fitting is measured, not estimated
 

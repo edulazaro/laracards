@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.0
+
+Added:
+
+- **Image templates.** A template whose `file` is a PNG, JPG or WebP is drawn with GD instead of being rendered from an SVG: the fitted text is written straight onto the image. No renderer binary and no new PHP dependency; GD was already required to measure text. Fit rules take `color` and `align` for these templates, and every block needs a `baseline` or a place in a `stack`. The card background is drawn under the image, and the template config is part of the fingerprint so a colour change regenerates the cards.
+- **`stack`** on a template centres a group of blocks as one unit on `center_y`, each below the previous with `gap` between them; a block that comes out empty drops out. Works for SVG templates too, through `{key}_baseline` and `{key}_bottom`.
+- `cards:generate` runs without a renderer binary when every configured template is an image. With SVG templates configured it still stops up front, as before, and `CardGenerator` used directly raises a clear error for an SVG card when the binary is missing.
+- `TextFitter::metrics()` and `TextFitter::points()`.
+
+Nothing changes for existing SVG templates: same placeholders, same output, same fingerprints.
+
 ## 1.0.2
 
 Three bugs that only surfaced once the package was driving a real site.

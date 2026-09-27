@@ -1,6 +1,6 @@
 {
     "name": "edulazaro/laracards",
-    "description": "Editorial social cards and blog covers for Laravel. SVG templates rendered with rsvg-convert or resvg, real font metrics for text fitting, and pluggable backgrounds (solid, Unsplash or AI-generated images).",
+    "description": "Editorial social cards and blog covers for Laravel. SVG templates rendered with rsvg-convert or resvg, or image templates drawn with GD, real font metrics for text fitting, and pluggable backgrounds (solid, Unsplash or AI-generated images).",
     "keywords": [
         "laravel",
         "og",
